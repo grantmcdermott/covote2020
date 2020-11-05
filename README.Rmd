@@ -74,11 +74,19 @@ Next, the 2020 election data. **NOTE: Again, these data should be considered inc
 
 ## Source: Fox (county-level)
 
-e20 = fread('https://feeds-elections.foxnews.com/archive/politics/elections/2020/3/President/county-level-results/feed_slimmer.csv?cb=1604517071294?cb=1604517071294', fill = TRUE)
+e20 = fread('https://feeds-elections.foxnews.com/archive/politics/elections/2020/3/President/county-level-results/feed_slimmer.csv', fill = TRUE)
 
-e20 = e20[, c(1,4,6)]
-names(e20) = c('fips', 'dem', 'gop')
-e20[, perc_dem := round(dem / (dem + gop) * 100, 1)]
+e20[, tot_votes := rowSums(.SD, na.rm = TRUE), .SDcols = seq(from=4, to=ncol(e20), by = 2)]
+e20 = e20[, c(1, 3, 4, 6, ncol(..e20))]
+names(e20) = c('fips', 'switch', 'can1', 'can2', 'tot_votes')
+
+# Account for terrible CSV formatting (https://github.com/grantmcdermott/covote2020/pull/1)
+e20[, ':=' (gop = fcase(switch == 1, can1, switch == 0, can2), 
+						dem = fcase(switch == 0, can1, switch == 1, can2))]
+e20[, c('switch', 'can1', 'can2') := NULL]
+
+e20[, ':=' (perc_dem20 = round(dem / tot_votes * 100, 1), 
+						perc_gop20 = round(gop / tot_votes * 100, 1))]
 e20[, fips := sprintf('%05d', fips)]
 ```
 
@@ -112,11 +120,12 @@ ecov20 = merge(ecov20,
 							 by = 'fips')
 
 ## Add some extra columns
-ecov20[, dem_change := perc_dem - perc_dem16]
-ecov20[, flipped := fcase(perc_dem > 50 & perc_dem16 > perc_gop16, 'Dem hold',
-													perc_dem < 50 & perc_dem16 < perc_gop16, 'GOP hold',
-													perc_dem > 50 & perc_dem16 < perc_gop16, 'Dem flip',
-													perc_dem < 50 & perc_dem16 > perc_gop16, 'GOP flip'
+ecov20[, ':=' (dem_change = perc_dem20 - perc_dem16, 
+							 gop_change = perc_gop20 - perc_gop16)]
+ecov20[, flipped := fcase(perc_dem20 > perc_gop20 & perc_dem16 > perc_gop16, 'Dem hold',
+													perc_dem20 < perc_gop20 & perc_dem16 < perc_gop16, 'GOP hold',
+													perc_dem20 > perc_gop20 & perc_dem16 < perc_gop16, 'Dem flip',
+													perc_dem20 < perc_gop20 & perc_dem16 > perc_gop16, 'GOP flip'
 													)]
 ```
 
@@ -164,10 +173,23 @@ ggplot(ecov20[!is.na(flipped)],
 			 aes(dem_change, deaths_pc, size = pop/1e6, col = flipped)) +
 	geom_jitter(alpha = 0.3) +
 	scale_size_continuous(name = 'County pop. (mil.)') +
-	scale_colour_brewer(palette = "Dark2") +
+	scale_colour_manual(values = flip_cols) +
 	guides(colour = FALSE) +
 	labs(title = '2020 US Dem gains vs. COVID deaths',
 			 caption = 'Note: 2020 results incomplete and preliminary!\nCode: https://github.com/grantmcdermott/covote2020 (@grant_mcdermott)',
 			 x = 'Dem share of vote change (vs. 2016)', y = 'Total deaths per capita') +
 	facet_wrap(~ flipped, scales = 'free_x')
+
+ggplot(ecov20, 
+			 aes(perc_gop16, perc_gop20, size = pop/1e6)) +
+	geom_point(shape = 21, stroke = 0.2) +
+	geom_point(data = ecov20[grepl('flip', flipped)], 
+						 aes(col = flipped), shape = 21, stroke = 0.5) +
+	geom_abline(intercept = 0, slope = 1, col = 'orange', lty = 2) +
+	scale_size_continuous(name = 'County pop. (mil.)') +
+	scale_colour_manual(values = flip_cols) +
+	guides(colour = FALSE) +
+	labs(title = 'Trump 2020 vs 2016 performance',
+			 caption = 'Note: Colour circles denote flipped counties\n2020 results incomplete and preliminary!\nCode: https://github.com/grantmcdermott/covote2020 (@grant_mcdermott)',
+			 x = 'Trump share of vote 2016', y = 'Trump share of vote 2016') 
 ```
