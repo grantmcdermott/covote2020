@@ -66,8 +66,10 @@ considered incomplete and preliminary!**
 
     e20 = fread('https://feeds-elections.foxnews.com/archive/politics/elections/2020/3/President/county-level-results/feed_slimmer.csv?cb=1604517071294?cb=1604517071294', fill = TRUE)
 
-    e20 = e20[, c(1,4,6)]
-    names(e20) = c('fips', 'dem', 'gop')
+    e20 = e20[, c(1, 3, 4, 6)]
+    names(e20) = c('fips', 'switch', 'can1', 'can2')
+    e20[, `:=`(gop = fcase(switch == 1, can1, switch == 0, can2), 
+        dem = fcase(switch == 0, can1, switch == 1, can2))]
     e20[, perc_dem := round(dem / (dem + gop) * 100, 1)]
     e20[, fips := sprintf('%05d', fips)]
 
