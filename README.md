@@ -12,7 +12,7 @@ focused on the 2016 election). The analysis here is based on preliminary
 and incomplete data, but should become increasingly accurate as vote
 tallies are finalised.
 
-The below scripts were most recently run at **2020-11-05 11:55:08**.
+The below scripts were most recently run at **2020-11-05 12:00:28**.
 
 ### Libraries
 
@@ -187,9 +187,10 @@ Plot time.
         scale_size_continuous(name = 'County pop. (mil.)') +
         scale_colour_manual(values = flip_cols) +
         guides(colour = FALSE) +
-        labs(title = 'Trump 2020 vs 2016 performance',
+        coord_equal() +
+        labs(title = 'Trump 2020 vs 2016 performance, by county',
                  caption = 'Note: Colour circles denote flipped counties\n2020 results incomplete and preliminary!\nCode: https://github.com/grantmcdermott/covote2020 (@grant_mcdermott)',
-                 x = 'Trump share of vote 2016', y = 'Trump share of vote 2016') 
+                 x = 'Trump share of vote 2016', y = 'Trump share of vote 2020') 
     #> Warning: Removed 5 rows containing missing values (geom_point).
 
 ![](README_files/figure-gfm/ecov20_plots-5.png)<!-- -->

@@ -189,7 +189,8 @@ ggplot(ecov20,
 	scale_size_continuous(name = 'County pop. (mil.)') +
 	scale_colour_manual(values = flip_cols) +
 	guides(colour = FALSE) +
-	labs(title = 'Trump 2020 vs 2016 performance',
+	coord_equal() +
+	labs(title = 'Trump 2020 vs 2016 performance, by county',
 			 caption = 'Note: Colour circles denote flipped counties\n2020 results incomplete and preliminary!\nCode: https://github.com/grantmcdermott/covote2020 (@grant_mcdermott)',
-			 x = 'Trump share of vote 2016', y = 'Trump share of vote 2016') 
+			 x = 'Trump share of vote 2016', y = 'Trump share of vote 2020') 
 ```
